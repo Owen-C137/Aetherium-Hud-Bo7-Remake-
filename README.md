@@ -104,12 +104,13 @@ to false
 
 ## Credits
 
-**Kingslayer Kyle** 
-**Shidouri** 
-**MadGaz** 
+- Kingslayer Kyle 
+- Shidouri
+- MadGaz
 ---
 
-## Support Join My Discord: [Discord Invite Link](https://discord.gg/fRhT4GNryr)
+## For Support Join My Discord: 
+- [Discord Invite Link](https://discord.gg/fRhT4GNryr)
 
 ---
 
