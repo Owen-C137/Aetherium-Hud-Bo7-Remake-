@@ -2,7 +2,7 @@
 
 A modern, feature-rich HUD system for Black Ops 3 Zombies, inspired by Black Ops 6 design.
 
-> **Note:** This is not a complete 1:1 recreation. This HUD was created with the available tools and assets in BO3 modding.
+> This is not a complete 1:1 recreation. This HUD was created with the available tools and assets in BO3 modding.
 
 ---
 
