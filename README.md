@@ -13,7 +13,7 @@ this is a beta/test version to find issues before releasing publicly.
 
 ## Installation
 
-### Step 1: Install Model Assets
+### Step 1: Install Assets
 
 1. Navigate to the `DRAG_IN_BO3_ROOT` folder
 2. Copy the `model_export` folder into your **Black Ops 3 root directory**
