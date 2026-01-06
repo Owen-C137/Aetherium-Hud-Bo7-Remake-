@@ -45,6 +45,9 @@ rawfile,ui/uieditor/widgets/HUD/Mappings/AetheriumBBG.lua
 rawfile,ui/uieditor/widgets/HUD/Mappings/AetheriumWeapons.lua
 rawfile,ui/uieditor/widgets/HUD/Mappings/AtheriumPerks.lua
 
+scriptparsetree,scripts/zm/_zm_aetherium_hud.gsc
+scriptparsetree,scripts/zm/_zm_aetherium_hud.csc
+
 material,sat_hud_horizontal_compass
 
 // Custom Kill Feed Strings
