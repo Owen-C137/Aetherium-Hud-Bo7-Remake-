@@ -32,6 +32,11 @@
 #precache( "string", "ZM_AETHERIUM_KF_THUNDER_WALL" );
 #precache( "string", "ZM_AETHERIUM_KF_TURNED" );
 #precache( "string", "ZM_AETHERIUM_KF_ZOMBIE_DOG" );
+#precache( "string", "ZM_AETHERIUM_KF_ROCKET_SHIELD" );
+#precache( "string", "ZM_AETHERIUM_KF_GRENADE" );
+#precache( "string", "ZM_AETHERIUM_KF_MONKEY_BOMB" );
+#precache( "string", "ZM_AETHERIUM_KF_LIL_ARNIE" );
+#precache( "string", "ZM_AETHERIUM_KF_RAGNAROK_DG4" );
 
 #namespace zm_aetherium_hud;
 
@@ -120,8 +125,73 @@ function zombie_death_callback( death, inflictor, attacker, damage, flags, mod, 
 	// Process both regular zombies and zombie dogs
 	if( IsDefined( self ) && IS_EQUAL( self.team, level.zombie_team ) )
 	{
-		// Handle zombie dog kills FIRST (check character model)
-		if( death && IsDefined( attacker ) && IsPlayer( attacker ) && IsDefined( self.model ) && IsSubStr( self.model, "hellhound" ) )
+		// Handle Rocket Shield kills FIRST (explosive projectile damage)
+		if( death && IsDefined( attacker ) && IsPlayer( attacker ) && IsDefined( weapon ) && ( weapon.name == "zod_riotshield" || weapon.name == "zod_riotshield_upgraded" ) )
+		{
+			player_points = zm_score::get_zombie_death_player_points();
+			points = level.zombie_vars["zombie_score_bonus_burn"];
+			text = &"ZM_AETHERIUM_KF_ROCKET_SHIELD";
+			
+			player_points += points;
+			player_points *= level.zombie_vars[attacker.team]["zombie_point_scalar"];
+			
+			// Send LUI notification to player
+			attacker LuiNotifyEvent( &"score_event", 2, text, player_points );
+		}
+		// Handle Grenade kills (frag grenades)
+		else if( death && IsDefined( attacker ) && IsPlayer( attacker ) && IsDefined( weapon ) && ( weapon.name == "frag_grenade" || IsSubStr( weapon.name, "grenade" ) ) )
+		{
+			player_points = zm_score::get_zombie_death_player_points();
+			points = level.zombie_vars["zombie_score_bonus_burn"];
+			text = &"ZM_AETHERIUM_KF_GRENADE";
+			
+			player_points += points;
+			player_points *= level.zombie_vars[attacker.team]["zombie_point_scalar"];
+			
+			// Send LUI notification to player
+			attacker LuiNotifyEvent( &"score_event", 2, text, player_points );
+		}
+		// Handle Monkey Bomb kills
+		else if( death && IsDefined( attacker ) && IsPlayer( attacker ) && IsDefined( weapon ) && weapon.name == "cymbal_monkey" )
+		{
+			player_points = zm_score::get_zombie_death_player_points();
+			points = level.zombie_vars["zombie_score_bonus_burn"];
+			text = &"ZM_AETHERIUM_KF_MONKEY_BOMB";
+			
+			player_points += points;
+			player_points *= level.zombie_vars[attacker.team]["zombie_point_scalar"];
+			
+			// Send LUI notification to player
+			attacker LuiNotifyEvent( &"score_event", 2, text, player_points );
+		}
+		// Handle Li'l Arnie kills (BO3 octobomb)
+		else if( death && IsDefined( attacker ) && IsPlayer( attacker ) && IsDefined( weapon ) && ( weapon.name == "octobomb" || weapon.name == "octobomb_upgraded" ) )
+		{
+			player_points = zm_score::get_zombie_death_player_points();
+			points = level.zombie_vars["zombie_score_bonus_burn"];
+			text = &"ZM_AETHERIUM_KF_LIL_ARNIE";
+			
+			player_points += points;
+			player_points *= level.zombie_vars[attacker.team]["zombie_point_scalar"];
+			
+			// Send LUI notification to player
+			attacker LuiNotifyEvent( &"score_event", 2, text, player_points );
+		}
+		// Handle Ragnarok DG-4 kills (gravity spikes specialist weapon)
+		else if( death && IsDefined( attacker ) && IsPlayer( attacker ) && IsDefined( weapon ) && weapon.name == "hero_gravityspikes_melee" )
+		{
+			player_points = zm_score::get_zombie_death_player_points();
+			points = level.zombie_vars["zombie_score_bonus_burn"];
+			text = &"ZM_AETHERIUM_KF_RAGNAROK_DG4";
+			
+			player_points += points;
+			player_points *= level.zombie_vars[attacker.team]["zombie_point_scalar"];
+			
+			// Send LUI notification to player
+			attacker LuiNotifyEvent( &"score_event", 2, text, player_points );
+		}
+		// Handle zombie dog kills (check character model)
+		else if( death && IsDefined( attacker ) && IsPlayer( attacker ) && IsDefined( self.model ) && IsSubStr( self.model, "hellhound" ) )
 		{
 			player_points = zm_score::get_zombie_death_player_points();
 			points = 0;
