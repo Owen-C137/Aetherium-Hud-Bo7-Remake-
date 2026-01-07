@@ -68,7 +68,7 @@ CoD.AetheriumPowerupNotification.new = function(menu, controller)
 	self.powerupText:setLeftRight(true, false, 574, 748)
 	self.powerupText:setTopBottom(true, false, 525, 541)
 	self.powerupText:setText(Engine.Localize(""))
-	self.powerupText:setTTF("fonts/ltromatic.ttf")
+	self.powerupText:setTTF("fonts/orbitron.ttf")
 	self.powerupText:setRGB(1, 1, 1)
 	self.powerupText:setAlignment(Enum.LUIAlignment.LUI_ALIGNMENT_CENTER)
 	self.powerupText:setAlpha(0)  -- Hidden by default

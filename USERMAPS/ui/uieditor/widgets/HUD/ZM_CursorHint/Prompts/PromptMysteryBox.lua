@@ -37,7 +37,7 @@ function CoD.PromptMysteryBox.new( menu, controller )
 	self.titleText:setLeftRight(true, false, 620, 754)
 	self.titleText:setTopBottom(true, false, 449, 459)
 	self.titleText:setText("Mystery Box")
-	self.titleText:setTTF("fonts/ltromatic.ttf")
+	self.titleText:setTTF("fonts/orbitron.ttf")
 	self.titleText:setRGB(1, 1, 1)
 	self.titleText:setAlignment(Enum.LUIAlignment.LUI_ALIGNMENT_LEFT)
 	self:addElement(self.titleText)
@@ -108,8 +108,8 @@ function CoD.PromptMysteryBox.new( menu, controller )
 	
 	-- box_icon_image (mystery box icon / weapon icon)
 	self.boxIcon = LUI.UIImage.new()
-	self.boxIcon:setLeftRight(true, false, 552, 609)
-	self.boxIcon:setTopBottom(true, false, 462, 504)
+	self.boxIcon:setLeftRight(true, false, 559, 602)
+	self.boxIcon:setTopBottom(true, false, 455, 498)
 	self.boxIcon:setImage(RegisterImage("i_mtl_ui_icon_zm_ping_mystery_box"))
 	self.boxIcon:setRGB(1, 1, 1)
 	self:addElement(self.boxIcon)
@@ -164,6 +164,9 @@ function CoD.PromptMysteryBox.SetMode( self, mode, weaponName )
 			end
 			if self.boxIcon then 
 				self.boxIcon:setImage(RegisterImage(weaponData.icon or "blacktransparent"))
+				-- Weapon mode icon position
+				self.boxIcon:setLeftRight(true, false, 550, 611)
+				self.boxIcon:setTopBottom(true, false, 464, 500)
 			end
 			if self.boxCost then 
 				self.boxCost:setAlpha(0)
@@ -184,6 +187,9 @@ function CoD.PromptMysteryBox.SetMode( self, mode, weaponName )
 			end
 			if self.boxIcon then 
 				self.boxIcon:setImage(RegisterImage("blacktransparent"))
+				-- Weapon mode icon position
+				self.boxIcon:setLeftRight(true, false, 552, 609)
+				self.boxIcon:setTopBottom(true, false, 462, 504)
 			end
 			if self.boxCost then 
 				self.boxCost:setAlpha(0)
@@ -205,6 +211,9 @@ function CoD.PromptMysteryBox.SetMode( self, mode, weaponName )
 		end
 		if self.boxIcon then 
 			self.boxIcon:setImage(RegisterImage("i_mtl_ui_icon_zm_ping_mystery_box"))
+			-- Box mode icon position (original)
+			self.boxIcon:setLeftRight(true, false, 559, 602)
+			self.boxIcon:setTopBottom(true, false, 455, 498)
 		end
 		if self.boxCost then 
 			self.boxCost:setAlpha(1)

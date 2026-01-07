@@ -47,7 +47,7 @@ function CoD.PromptBBG.new( menu, controller )
 	self.bbgNameText:setLeftRight(true, false, 620, 754)
 	self.bbgNameText:setTopBottom(true, false, 449, 459)
 	self.bbgNameText:setText("")
-	self.bbgNameText:setTTF("fonts/ltromatic.ttf")
+	self.bbgNameText:setTTF("fonts/orbitron.ttf")
 	self.bbgNameText:setRGB(1, 1, 1)
 	self.bbgNameText:setAlignment(Enum.LUIAlignment.LUI_ALIGNMENT_LEFT)
 	self.bbgNameText:setAlpha(0)  -- Hidden by default

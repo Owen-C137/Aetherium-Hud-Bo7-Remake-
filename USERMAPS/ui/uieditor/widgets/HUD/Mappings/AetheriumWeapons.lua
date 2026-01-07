@@ -22,12 +22,12 @@ CoD.AetheriumWeaponData = {
 		icon = "i_mtl_sat_icon_weapon_sat_ar_condor_ao",
 		description = "High damage assault rifle with moderate recoil"
 	},
-	["sat_ar_condor_cookie_zm"] = {
+	["sat_ar_condor_cookie"] = {
 		ingame_name = "Sweet Tooth",
 		icon = "i_mtl_sat_icon_weapon_sat_ar_condor_ao",
 		description = "High damage assault rifle with moderate recoil"
 	},
-	["sat_ar_condor_cookie_alt_zm"] = {
+	["sat_ar_condor_cookie_alt"] = {
 		ingame_name = "Sweet Tooth Baby Maker",
 		icon = "i_mtl_sat_icon_weapon_sat_ar_condor_ao",
 		description = "High damage assault rifle with moderate recoil"
@@ -76,6 +76,11 @@ CoD.AetheriumWeaponData = {
 		description = "WHAT GOES UP... MUST COME DOWN!"
 	},
 	-- Default Bo3 Mappings
+	["zod_rocketshield"] = {
+		ingame_name = "Rocket Shield",
+		icon = "riotshield_zm_icon",
+		description = "WHAT GOES UP... MUST COME DOWN!"
+	},
 	-- Default NO IMAGE / NO DESC entry
 	["default"] = {
 		icon = "",

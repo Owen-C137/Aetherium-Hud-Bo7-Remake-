@@ -106,7 +106,7 @@ CoD.AetheriumKillFeed.new = function ( menu, controller )
 	self.total = LUI.UIText.new()
 	self.total:setLeftRight( true, false, 721, 781 )
 	self.total:setTopBottom( true, false, 317, 328 )
-	self.total:setTTF( "fonts/ltromatic.ttf" )
+	self.total:setTTF( "fonts/orbitron.ttf" )
 	self.total:setRGB( 0.933, 0.906, 0.522 ) -- Yellowish
 	self.total:setAlignment( Enum.LUIAlignment.LUI_ALIGNMENT_LEFT )
 	self.total:setAlpha( 0 ) -- Start hidden

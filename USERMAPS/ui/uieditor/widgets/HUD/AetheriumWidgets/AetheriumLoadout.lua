@@ -13,17 +13,25 @@ function CoD.GetWeaponDataByName(weaponName)
 	end
 	
 	local lowerName = string.lower(weaponName)
+	local normalizedName = lowerName:gsub("%s+", "")  -- Remove all spaces for comparison
 	
 	-- Try exact codename match first
 	if CoD.AetheriumWeaponData[weaponName] then
 		return CoD.AetheriumWeaponData[weaponName]
 	end
 	
-	-- Try matching against ingame_name field (case-insensitive search)
+	-- Try matching against ingame_name field (case-insensitive search with space normalization)
 	for weaponKey, weaponInfo in pairs(CoD.AetheriumWeaponData) do
 		if weaponInfo.ingame_name then
 			local lowerIngameName = string.lower(weaponInfo.ingame_name)
-			-- Check if the hint text contains the ingame name
+			local normalizedIngameName = lowerIngameName:gsub("%s+", "")  -- Remove spaces for comparison
+			
+			-- Check if normalized names match
+			if normalizedName == normalizedIngameName then
+				return weaponInfo
+			end
+			
+			-- Also check if the hint text contains the ingame name (original behavior)
 			if string.find(lowerName, lowerIngameName, 1, true) then
 				return weaponInfo
 			end
@@ -131,7 +139,7 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.weapon_name:setLeftRight(true, false, 847, 1106)
 	self.weapon_name:setTopBottom(true, false, 568, 585)
 	self.weapon_name:setText( Engine.Localize( "" ) )
-	self.weapon_name:setTTF( "fonts/ltromatic.ttf" )
+	self.weapon_name:setTTF( "fonts/orbitron.ttf" )
 	self.weapon_name:setRGB( 1.0, 1.0, 1.0 )
 	self.weapon_name:setAlignment(Enum.LUIAlignment.LUI_ALIGNMENT_CENTER)
 	self:addElement( self.weapon_name )
@@ -147,7 +155,7 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.ammo_clip:setLeftRight(true, false, 948, 1061)
 	self.ammo_clip:setTopBottom(true, false, 605, 624)
 	self.ammo_clip:setText( Engine.Localize( "0" ) )
-	self.ammo_clip:setTTF( "fonts/ltromatic.ttf" )
+	self.ammo_clip:setTTF( "fonts/orbitron.ttf" )
 	self.ammo_clip:setRGB( 1.0, 1.0, 1.0 )
 	self.ammo_clip:setAlignment( Enum.LUIAlignment.LUI_ALIGNMENT_CENTER )
 	self:addElement( self.ammo_clip )
@@ -163,7 +171,7 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.ammo_stock:setLeftRight(true, false, 968, 1057)
 	self.ammo_stock:setTopBottom(true, false, 629, 638)
 	self.ammo_stock:setText( Engine.Localize( "0" ) )
-	self.ammo_stock:setTTF( "fonts/ltromatic.ttf" )
+	self.ammo_stock:setTTF( "fonts/orbitron.ttf" )
 	self.ammo_stock:setRGB( 1.0, 1.0, 1.0 )
 	self.ammo_stock:setAlignment( Enum.LUIAlignment.LUI_ALIGNMENT_CENTER )
 	self:addElement( self.ammo_stock )
@@ -201,7 +209,7 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.lethal_count:setLeftRight( true, false, 1153, 1180 )
 	self.lethal_count:setTopBottom( true, false, 567, 579 )
 	self.lethal_count:setText( Engine.Localize( "+4" ) )
-	self.lethal_count:setTTF( "fonts/ltromatic.ttf" )
+	self.lethal_count:setTTF( "fonts/orbitron.ttf" )
 	self.lethal_count:setRGB( 1, 1, 1 )
 	self.lethal_count:setAlignment( Enum.LUIAlignment.LUI_ALIGNMENT_LEFT )
 	self:addElement( self.lethal_count )
@@ -249,7 +257,7 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.tactical_count:setLeftRight( true, false, 1099, 1124 )
 	self.tactical_count:setTopBottom( true, false, 565, 577 )
 	self.tactical_count:setText( Engine.Localize( "+4" ) )
-	self.tactical_count:setTTF( "fonts/ltromatic.ttf" )
+	self.tactical_count:setTTF( "fonts/orbitron.ttf" )
 	self.tactical_count:setRGB( 1, 1, 1 )
 	self.tactical_count:setAlignment( Enum.LUIAlignment.LUI_ALIGNMENT_LEFT )
 	self.tactical_count:setAlpha( 0 )

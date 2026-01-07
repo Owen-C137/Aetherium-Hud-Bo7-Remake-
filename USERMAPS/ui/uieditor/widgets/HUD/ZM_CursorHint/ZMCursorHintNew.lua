@@ -1,4 +1,4 @@
--- Import prompt widgets
+﻿-- Import prompt widgets
 require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptPowerSwitch" )
 require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptDefault" )
 require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptPowerRequired" )
@@ -6,6 +6,7 @@ require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptPerks" )
 require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptPAP" )
 require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptMysteryBox" )
 require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptBBG" )
+require( "ui.uieditor.widgets.HUD.ZM_CursorHint.Prompts.PromptWallBuy" )
 require( "ui.uieditor.widgets.HUD.Mappings.AtheriumPerks" )  -- For CoD.AetheriumPerks table
 require( "ui.uieditor.widgets.HUD.Mappings.AetheriumBBG" )  -- For CoD.AetheriumBBGData and helpers
 require( "ui.uieditor.widgets.HUD.Mappings.AetheriumWeapons" )  -- For CoD.AetheriumWeaponData table
@@ -69,6 +70,12 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 	self.promptBBG:setTopBottom( true, false, 0, 720 )
 	self:addElement( self.promptBBG )
 	
+	-- Create Wall Buy Prompt (wall weapon purchases)
+	self.promptWallBuy = CoD.PromptWallBuy.new( menu, controller )
+	self.promptWallBuy:setLeftRight( true, false, 0, 1280 )
+	self.promptWallBuy:setTopBottom( true, false, 0, 720 )
+	self:addElement( self.promptWallBuy )
+	
 	-- Helper function to check if cursor hint should be shown (official pattern)
 	local function IsCursorHintActive()
 		local showModel = Engine.GetModel( Engine.GetModelForController( controller ), "hudItems.showCursorHint" )
@@ -77,6 +84,46 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 			return modelValue == true
 		end
 		return false
+	end
+	
+	-- Helper function to get cursorHintImage model value
+	local function getCursorHintImage()
+		local imageModel = Engine.GetModel(Engine.GetModelForController(controller), "hudItems.cursorHintImage")
+		if imageModel then
+			return Engine.GetModelValue(imageModel) or ""
+		end
+		return ""
+	end
+	
+	-- Helper function to get cursorHintIconRatio model value
+	local function getCursorHintIconRatio()
+		local ratioModel = Engine.GetModel(Engine.GetModelForController(controller), "hudItems.cursorHintIconRatio")
+		if ratioModel then
+			return Engine.GetModelValue(ratioModel) or 0
+		end
+		return 0
+	end
+	
+	-- Helper function to detect WALL BUY hints
+	-- Actual format: "Hold F for weapon_name [Cost: 1400]"
+	local function isWallBuyHint(hintText)
+		if not hintText or hintText == "" then
+			return false
+		end
+		
+		local lowerHint = string.lower(hintText)
+		local hasImage = getCursorHintImage() ~= ""
+		
+		-- Wall buy pattern: has "[Cost: number]" in the text
+		local hasCostBracket = string.find(lowerHint, "%[cost:")
+		
+		-- Exclude mystery box (cost 950)
+		local isMysteryBox = string.find(lowerHint, "950") or string.find(lowerHint, "mystery")
+		
+		local result = hasCostBracket and not isMysteryBox
+		
+		-- FIXED: Don't check iconRatio > 0, just check if image exists
+		return hasImage and result
 	end
 	
 	-- Helper function to check if hint is power switch
@@ -230,9 +277,13 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 		
 		local lowerHint = string.lower(hintText)
 		
-		-- Check for "hold f for" pattern (weapon pickup)
+		-- Check for "hold f for" pattern (weapon pickup from mystery box)
+		-- Mystery box weapons don't have "buy" or "cost" keywords
 		if string.find(lowerHint, "hold") and string.find(lowerHint, "for") and not string.find(lowerHint, "mystery") then
-			return true
+			-- Exclude if it has buy/purchase/cost keywords (those are wall buys)
+			if not string.find(lowerHint, "buy") and not string.find(lowerHint, "purchase") and not string.find(lowerHint, "cost") then
+				return true
+			end
 		end
 		
 		return false
@@ -363,6 +414,22 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 			end
 		},
 		{
+			stateName = "WallBuy",
+			condition = function ( menu, element, event )
+				if not IsCursorHintActive() then
+					return false
+				end
+				
+				local cursorHintTextModel = Engine.GetModel( Engine.GetModelForController( controller ), "hudItems.cursorHintText" )
+				if cursorHintTextModel then
+					local cursorHintText = Engine.GetModelValue( cursorHintTextModel )
+					return isWallBuyHint(cursorHintText)
+				end
+				
+				return false
+			end
+		},
+		{
 			stateName = "MysteryBox",
 			condition = function ( menu, element, event )
 				if not IsCursorHintActive() then
@@ -419,7 +486,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				local cursorHintTextModel = Engine.GetModel( Engine.GetModelForController( controller ), "hudItems.cursorHintText" )
 				if cursorHintTextModel then
 					local cursorHintText = Engine.GetModelValue( cursorHintTextModel )
-				-- Has a hint but not power switch, power required, perks, PAP, gobblegum, or mystery box
+				-- Has a hint but not power switch, power required, perks, PAP, gobblegum, mystery box, or wall buy
 				if cursorHintText and cursorHintText ~= "" then
 					return not isPowerSwitchHint(cursorHintText) and 
 					       not isPowerRequiredHint(cursorHintText) and 
@@ -427,7 +494,8 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				       not isPAPHint(cursorHintText) and
 				       not isGobbleGumHint(cursorHintText) and
 			       not isMysteryBoxHint(cursorHintText) and
-			       not isMysteryBoxWeapon(cursorHintText)
+			       not isMysteryBoxWeapon(cursorHintText) and
+			       not isWallBuyHint(cursorHintText)
 					end
 				end
 				return false
@@ -508,6 +576,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 0 )
 				self.promptBBG:setAlpha( 0 )
 				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 0 )
 			end
 		},
 		PowerSwitch = {
@@ -519,6 +588,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 0 )
 				self.promptBBG:setAlpha( 0 )
 				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 0 )
 			end
 		},
 		Perks = {
@@ -530,6 +600,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 0 )
 				self.promptBBG:setAlpha( 0 )
 				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 0 )
 			end
 		},
 		PAP = {
@@ -541,6 +612,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 1 )
 				self.promptBBG:setAlpha( 0 )
 				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 0 )
 			end
 		},
 		GobbleGum = {
@@ -552,6 +624,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 0 )
 				self.promptBBG:setAlpha( 1 )
 				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 0 )
 			end
 		},
 		MysteryBox = {
@@ -563,6 +636,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 0 )
 				self.promptBBG:setAlpha( 0 )
 				self.promptMysteryBox:setAlpha( 1 )
+				self.promptWallBuy:setAlpha( 0 )
 			end
 		},
 		PowerRequired = {
@@ -574,6 +648,19 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 0 )
 				self.promptBBG:setAlpha( 0 )
 				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 0 )
+			end
+		},
+		WallBuy = {
+			DefaultClip = function ()
+				self.PromptPowerSwitch:setAlpha( 0 )
+				self.promptDefault:setAlpha( 0 )
+				self.PromptPowerRequired:setAlpha( 0 )
+				self.promptPerks:setAlpha( 0 )
+				self.promptPAP:setAlpha( 0 )
+				self.promptBBG:setAlpha( 0 )
+				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 1 )
 			end
 		},
 		DefaultHint = {
@@ -585,6 +672,7 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 				self.promptPAP:setAlpha( 0 )
 				self.promptBBG:setAlpha( 0 )
 				self.promptMysteryBox:setAlpha( 0 )
+				self.promptWallBuy:setAlpha( 0 )
 			end
 		}
 	}
@@ -597,6 +685,29 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 		element.promptPAP:close()
 		element.promptBBG:close()
 		element.promptMysteryBox:close()
+		element.promptWallBuy:close()
+	end )
+	
+	-- Subscribe to cursorHintImage for dynamic updates (wall buy detection)
+	self:subscribeToModel( Engine.GetModel( Engine.GetModelForController( controller ), "hudItems.cursorHintImage" ), function ( model )
+		-- Force state re-evaluation when weapon icon changes
+		menu:updateElementState( self, {
+			name = "cursorHintImage_update",
+			menu = menu,
+			modelValue = Engine.GetModelValue( model ),
+			modelName = "hudItems.cursorHintImage"
+		} )
+	end )
+	
+	-- Subscribe to cursorHintIconRatio for dynamic updates
+	self:subscribeToModel( Engine.GetModel( Engine.GetModelForController( controller ), "hudItems.cursorHintIconRatio" ), function ( model )
+		-- Force state re-evaluation when icon ratio changes
+		menu:updateElementState( self, {
+			name = "cursorHintIconRatio_update",
+			menu = menu,
+			modelValue = Engine.GetModelValue( model ),
+			modelName = "hudItems.cursorHintIconRatio"
+		} )
 	end )
 	
 	if PostLoadFunc then
@@ -611,3 +722,4 @@ CoD.ZMCursorHintNew.new = function ( menu, controller )
 	
 	return self
 end
+
