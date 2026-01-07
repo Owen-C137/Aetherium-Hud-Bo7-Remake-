@@ -164,16 +164,6 @@ CoD.AetheriumPlayerInfo.new = function ( menu, controller )
 	end )
 	self:addElement( self.player_portrait )
 
-
-	-- Dead State Overlay (Red X over portrait)
-	self.deadOverlay = LUI.UIImage.new()
-	self.deadOverlay:setLeftRight(true, false, 42, 91)
-	self.deadOverlay:setTopBottom(true, false, 628, 686)
-	self.deadOverlay:setImage(RegisterImage("i_mtl_image_4b496d8bd0369913"))
-	self.deadOverlay:setRGB(1, 0.2, 0.2)  -- Red
-	self.deadOverlay:setAlpha(0)  -- Hidden by default
-	self:addElement(self.deadOverlay)
-	
 	-- Shield Icon (shows when shield is equipped)
 	self.shield_icon = LUI.UIImage.new()
 	self.shield_icon:setLeftRight(true, false, 230, 253)
@@ -191,19 +181,17 @@ CoD.AetheriumPlayerInfo.new = function ( menu, controller )
 		if clientNum then
 			self.currentClientNum = clientNum
 			
-			-- Timer-based death detection
-			self.deathCheckTimer = nil
-			self.isDownedState = false
-			self.isDeadState = false
-			self.currentGobbleGum = nil  -- Track active gobblegum
+			-- Track current state
+			self.currentPlayerState = 0  -- 0=alive, 1=downed, 2=dead
+			self.currentGobbleGum = nil
+			self.currentHealth = nil
 			
-			-- Subscribe to bgb_current model for this player to detect Coagulant
+			-- Subscribe to gobblegum for Coagulant detection
 			local bgbModel = Engine.GetModel( Engine.GetModelForController( controller ), "bgb_current" )
 			if bgbModel then
 				self:subscribeToModel( bgbModel, function( model )
 					local bgbIndex = Engine.GetModelValue( model )
-					self.currentGobbleGum = bgbIndex
-					-- Coagulant is index 3 in AetheriumBBG.lua
+					self.currentGobbleGum = bgbIndex  -- Coagulant is index 3
 				end )
 			end
 			
@@ -219,35 +207,76 @@ CoD.AetheriumPlayerInfo.new = function ( menu, controller )
 			self.healthSubscription = self:subscribeToModel( healthModel, function ( model )
 				local health = Engine.GetModelValue( model )
 				if health then
+					-- Always store current health
+					self.currentHealth = health
+					
 					-- Update HP text (BO3 default: 100 base, 200 with Jug)
 					local maxHealth = 100
 					local currentHealth = math.ceil( health * maxHealth )
 					self.player_hp:setText( Engine.Localize( currentHealth .. " HP" ) )
 					
-					-- Check if downed (HP = 0) or alive (HP > 0)
-					if currentHealth <= 0 then
-						-- DOWNED STATE
-						if self.isDeadState then
-							-- Already dead, keep dead visuals
-						elseif not self.isDownedState then
-							-- First time hitting 0 HP - start downed state
-							self.isDownedState = true
+					-- Only update visual if alive
+					if self.currentPlayerState == 0 then
+						-- Update health bar fill
+						self.health_fill:completeAnimation()
+						self.health_fill:beginAnimation( "keyframe", 400, false, false, CoD.TweenType.Linear )
+						self.health_fill:setShaderVector( 0,
+							CoD.GetVectorComponentFromString( health, 1 ),
+							CoD.GetVectorComponentFromString( health, 2 ),
+							CoD.GetVectorComponentFromString( health, 3 ),
+							CoD.GetVectorComponentFromString( health, 4 ) )
+					end
+				end
+			end )
+			
+			-- Remove old state subscription if it exists
+			if self.stateSubscription ~= nil then
+				self:removeSubscription( self.stateSubscription )
+			end
+			
+			-- Subscribe to player state model (local player is always index 0)
+			if controllerModel then
+				local stateModel = Engine.GetModel( controllerModel, "player_state_0" )
+				if stateModel then
+					self.stateSubscription = self:subscribeToModel( stateModel, function ( model )
+					local newState = Engine.GetModelValue( model )
+					if newState ~= nil then
+						self.currentPlayerState = newState
+						
+						-- Handle state changes
+						if newState == 0 then
+							-- ====================================
+							-- ALIVE STATE
+							-- ====================================
+							self.health_fill:completeAnimation()
+							self.downedIcon:setAlpha(0)
+							self.player_portrait:setRGB(1, 1, 1)
+							self.player_name:setRGB(1, 1, 1)
+							self.health_fill:setRGB(1, 1, 1)
+							self.health_fill:setAlpha(1)
+							self.health_border:setAlpha(1)
+							self.points_icon:setAlpha(1)
+							self.points_amount:setAlpha(1)
+							self.player_hp:setAlpha(1)
 							
+							-- Set initial health bar value when becoming alive
+							if self.currentHealth then
+								self.health_fill:setShaderVector( 0,
+									CoD.GetVectorComponentFromString( self.currentHealth, 1 ),
+									CoD.GetVectorComponentFromString( self.currentHealth, 2 ),
+									CoD.GetVectorComponentFromString( self.currentHealth, 3 ),
+									CoD.GetVectorComponentFromString( self.currentHealth, 4 ) )
+							end
+							
+						elseif newState == 1 then
+							-- ====================================
+							-- DOWNED STATE
+							-- ====================================
 							-- Check if player has Coagulant gobblegum (index 3)
 							local bleedoutTime = 45000  -- Default: 45 seconds
 							if self.currentGobbleGum == 3 then
 								bleedoutTime = 135000  -- Coagulant: 135 seconds (3x longer)
 							end
-							
-							-- Cancel any existing timer
-							if self.deathCheckTimer ~= nil then
-								self:removeElement(self.deathCheckTimer)
-								self.deathCheckTimer = nil
-							end
-							
-							-- Start death check timer (45s or 135s based on gobblegum)
-							self.deathCheckTimer = LUI.UITimer.new(bleedoutTime, "death_check_timer", false)
-							self:addElement(self.deathCheckTimer)
 							
 							-- Show downed visuals
 							self.health_fill:completeAnimation()
@@ -259,52 +288,34 @@ CoD.AetheriumPlayerInfo.new = function ( menu, controller )
 							self.health_fill:setShaderVector( 0, 1, 0, 0, 0 )
 							self.health_fill:beginAnimation("bleedout_timer", bleedoutTime, false, false, CoD.TweenType.Linear)
 							self.health_fill:setShaderVector( 0, 0, 0, 0, 0 )
-							self.deadOverlay:setAlpha(0)
 							self.player_portrait:setRGB(1, 1, 1)
 							self.player_name:setRGB(1, 1, 1)
 							self.points_icon:setAlpha(1)
 							self.points_amount:setAlpha(1)
 							self.player_hp:setAlpha(1)
+							
+						elseif newState == 2 then
+							-- ====================================
+							-- DEAD STATE
+							-- ====================================
+							self.health_fill:completeAnimation()
+							self.health_fill:setAlpha(0)
+							self.health_border:setAlpha(0)
+							self.points_icon:setAlpha(0)
+							self.points_amount:setAlpha(0)
+							self.player_hp:setAlpha(0)
+							self.downedIcon:setAlpha(0)
+							self.player_portrait:setRGB(0.3, 0.3, 0.3)
+							self.player_name:setRGB(1, 0.2, 0.2)
 						end
-					else
-						-- ALIVE STATE (HP > 0) - RESET everything
-						-- Cancel timer if exists
-						if self.deathCheckTimer ~= nil then
-							self:removeElement(self.deathCheckTimer)
-							self.deathCheckTimer = nil
-						end
-						
-						-- Reset flags
-						self.isDownedState = false
-						self.isDeadState = false
-						
-						-- Show alive visuals
-						self.health_fill:completeAnimation()
-						self.downedIcon:setAlpha(0)
-						self.deadOverlay:setAlpha(0)
-						self.downedIcon:setRGB(1, 1, 1)
-						self.health_fill:setRGB(1, 1, 1)  -- Reset health bar to white
-						self.player_portrait:setRGB(1, 1, 1)
-						self.player_name:setRGB(1, 1, 1)
-						self.health_fill:setAlpha(1)
-						self.health_border:setAlpha(1)
-						self.points_icon:setAlpha(1)
-						self.points_amount:setAlpha(1)
-						self.player_hp:setAlpha(1)
-						
-						-- Update health bar fill with smooth animation
-						self.health_fill:beginAnimation( "keyframe", 400, false, false, CoD.TweenType.Linear )
-						self.health_fill:setShaderVector( 0,
-							CoD.GetVectorComponentFromString( health, 1 ),
-							CoD.GetVectorComponentFromString( health, 2 ),
-							CoD.GetVectorComponentFromString( health, 3 ),
-							CoD.GetVectorComponentFromString( health, 4 ) )
 					end
+				end )
 				end
-			end )
+			end
 			
 			-- Subscribe to shield health (riot shield)
-			local shieldHealthModel = Engine.GetModel( controllerModel, "zmInventory.shield_health" )
+			if controllerModel then
+				local shieldHealthModel = Engine.GetModel( controllerModel, "zmInventory.shield_health" )
 			
 			-- Remove old shield subscription if it exists
 			if self.shieldSubscription ~= nil then
@@ -365,54 +376,13 @@ CoD.AetheriumPlayerInfo.new = function ( menu, controller )
 				-- Move downed icon back to original position (smooth animation)
 				self.downedIcon:beginAnimation( "keyframe", 200, false, false, CoD.TweenType.Linear )
 				self.downedIcon:setLeftRight(true, false, 223, 253)
-			end
+				end
 				end
 			end )
+			end
 		end
 	end )
 	
-	-- Timer event handler for death check
-	self:registerEventHandler("death_check_timer", function()
-		-- Get current client number and health
-		if self.currentClientNum ~= nil then
-			local healthModel = Engine.GetModel( Engine.GetModelForController( controller ), "player_health_" .. self.currentClientNum )
-			if healthModel ~= nil then
-				local health = Engine.GetModelValue(healthModel)
-				if health ~= nil then
-					local maxHealth = 100
-					local currentHealth = math.ceil( health * maxHealth )
-					
-					if currentHealth <= 0 then
-						-- Still HP=0 after timer = DEAD (bled out)
-						self.isDeadState = true
-						self.isDownedState = false
-						
-						-- Show dead visuals
-						self.health_fill:completeAnimation()
-						self.health_fill:setAlpha(0)
-						self.health_border:setAlpha(0)
-						self.points_icon:setAlpha(0)
-						self.points_amount:setAlpha(0)
-						self.player_hp:setAlpha(0)
-						self.downedIcon:setAlpha(0)
-						self.deadOverlay:setAlpha(1)
-						self.player_portrait:setRGB(0.3, 0.3, 0.3)
-						self.player_name:setRGB(1, 0.2, 0.2)
-					else
-						-- Got revived before timer expired
-						self.isDownedState = false
-					end
-					
-					-- Cleanup timer
-					if self.deathCheckTimer ~= nil then
-						self:removeElement(self.deathCheckTimer)
-						self.deathCheckTimer = nil
-					end
-				end
-			end
-		end
-	end)
-
 	-- Points Delta Container (holds dynamically created popups - vanilla BO3 pattern)
 	self.pointsDeltaContainer = LUI.UIElement.new()
 	self.pointsDeltaContainer:setLeftRight( true, false, 223, 273 )  -- Match reference position

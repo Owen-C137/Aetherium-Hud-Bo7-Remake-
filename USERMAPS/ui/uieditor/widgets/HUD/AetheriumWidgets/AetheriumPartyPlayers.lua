@@ -1,121 +1,52 @@
--- Aetherium Party Players Widget - Dynamic positioning based on player index
+-- Aetherium Party Players Widget NEW - State-based detection
 -- Handles all 3 co-op party members (indices 1, 2, 3) with a single widget
--- Based on official BO3 pattern for dynamic player widgets
+-- Uses clientfield state detection (0=alive, 1=downed, 2=dead)
 
 require("ui.uieditor.widgets.HUD.Mappings.AetheriumBBG")
 
 local PostLoadFunc = function ( self, controller )
-	-- Hide widget by default (only show when valid clientNum exists)
-	self:setAlpha(0)
+	-- Track current state
+	self.currentPlayerState = 0  -- 0=alive, 1=downed, 2=dead
+	self.currentGobbleGum = nil
+	self.isPlayerSlotOccupied = false
 	
-	-- Timer-based death detection
-	self.deathCheckTimer = nil
-	self.isDownedState = false
-	self.isDeadState = false
-	self.currentGobbleGum = nil  -- Track active gobblegum
-	self.isPlayerSlotOccupied = false  -- Initialize visibility flag
-	
-	-- Subscribe to player health dynamically based on clientNum (BO6 Overhaul pattern)
+	-- Subscribe to clientNum to get player entity number
 	self:linkToElementModel( self, "clientNum", true, function ( clientModel )
 		local clientNum = Engine.GetModelValue( clientModel )
 		
 		if clientNum ~= nil then
 			self.currentClientNum = clientNum
-			-- Note: lastHealthValue is NOT reset here to prevent health bar jumping on round change
 			
-			-- Remove old subscription if exists
+			-- Remove old subscriptions if exist
 			if self.healthSubscription ~= nil then
 				self:removeSubscription( self.healthSubscription )
 			end
+			if self.stateSubscription ~= nil then
+				self:removeSubscription( self.stateSubscription )
+			end
 			
-			-- Subscribe to bgb_current model for this player to detect Coagulant
+			-- Subscribe to gobblegum for Coagulant detection
 			local bgbModel = Engine.GetModel( Engine.GetModelForController( controller ), "bgb_current" )
 			if bgbModel then
 				self:subscribeToModel( bgbModel, function( model )
 					local bgbIndex = Engine.GetModelValue( model )
-					self.currentGobbleGum = bgbIndex
-					-- Coagulant is index 3 in AetheriumBBG.lua
+					self.currentGobbleGum = bgbIndex  -- Coagulant is index 3
 				end )
 			end
 			
-			-- Subscribe to health model for this client number
+			-- Subscribe to health model (for health bar updates when alive)
 			local healthModel = Engine.GetModel( Engine.GetModelForController( controller ), "player_health_" .. clientNum )
 			if healthModel ~= nil then
 				self.healthSubscription = self:subscribeToModel( healthModel, function ( model )
 					local health = Engine.GetModelValue( model )
 					if health ~= nil then
-						local maxHealth = 100
-						local currentHealth = math.ceil( health * maxHealth )
+						-- Always store current health
+						self.currentHealth = health
 						
-						if currentHealth <= 0 then
-							-- DOWNED STATE
-							if self.isDeadState then
-								-- Already dead, keep dead visuals
-							elseif not self.isDownedState then
-								-- First time hitting 0 HP - start downed state
-								self.isDownedState = true
-								
-								-- Check if player has Coagulant gobblegum (index 3)
-								local bleedoutTime = 45000  -- Default: 45 seconds
-								if self.currentGobbleGum == 3 then
-									bleedoutTime = 135000  -- Coagulant: 135 seconds (3x longer)
-								end
-								
-								-- Cancel any existing timer
-								if self.deathCheckTimer ~= nil then
-									self:removeElement(self.deathCheckTimer)
-									self.deathCheckTimer = nil
-								end
-								
-								-- Start death check timer (45s or 135s based on gobblegum)
-								self.deathCheckTimer = LUI.UITimer.new(bleedoutTime, "death_check_timer", false)
-								self:addElement(self.deathCheckTimer)
-								
-								-- Show downed visuals (only if player slot is occupied)
-								self.health_fill:completeAnimation()
-								if self.isPlayerSlotOccupied then
-									self.downedIcon:setAlpha(1)
-									self.health_fill:setAlpha(1)
-									self.health_border:setAlpha(1)
-									self.essence_icon:setAlpha(1)
-									self.points:setAlpha(1)
-								end
-								self.downedIcon:setRGB(1, 0.2, 0.2)
-								self.health_fill:setRGB(1, 0.2, 0.2)
-								self.health_fill:setShaderVector( 0, 1, 0, 0, 0 )
-								self.health_fill:beginAnimation("bleedout_timer", bleedoutTime, false, false, CoD.TweenType.Linear)
-								self.health_fill:setShaderVector( 0, 0, 0, 0, 0 )
-								self.deadOverlay:setAlpha(0)
-								self.portrait:setRGB(1, 1, 1)
-								self.name:setRGB(1, 1, 1)
-							end
-						else
-							-- ALIVE STATE (HP > 0) - RESET everything
-							-- Cancel timer if exists
-							if self.deathCheckTimer ~= nil then
-								self:removeElement(self.deathCheckTimer)
-								self.deathCheckTimer = nil
-							end
-							
-							-- Reset flags
-							self.isDownedState = false
-							self.isDeadState = false
-							
-							-- Show alive visuals (only if player slot is occupied)
+						-- Only update visual if alive
+						if self.currentPlayerState == 0 then
+							-- Update health bar fill
 							self.health_fill:completeAnimation()
-							self.downedIcon:setAlpha(0)
-							self.deadOverlay:setAlpha(0)
-							self.portrait:setRGB(1, 1, 1)
-							self.name:setRGB(1, 1, 1)
-							self.health_fill:setRGB(1, 1, 1)  -- Reset health bar to white
-							if self.isPlayerSlotOccupied then
-								self.health_fill:setAlpha(1)
-								self.health_border:setAlpha(1)
-								self.essence_icon:setAlpha(1)
-								self.points:setAlpha(1)
-							end
-							
-							-- Update health bar fill with animation (BO6 Overhaul pattern - always animate)
 							self.health_fill:beginAnimation( "keyframe", 400, false, false, CoD.TweenType.Linear )
 							self.health_fill:setShaderVector( 0,
 								CoD.GetVectorComponentFromString( health, 1 ),
@@ -125,39 +56,77 @@ local PostLoadFunc = function ( self, controller )
 						end
 					end
 				end )
-				
-				-- Timer expired - check if still downed (HP=0)
-				self:registerEventHandler("death_check_timer", function()
-					-- Get current health
-					local health = Engine.GetModelValue(healthModel)
-					if health ~= nil then
-						local maxHealth = 100
-						local currentHealth = math.ceil( health * maxHealth )
+			end
+			
+			-- Subscribe to player state model (the key detection)
+			local stateModel = Engine.GetModel( Engine.GetModelForController( controller ), "player_state_" .. clientNum )
+			if stateModel then
+				self.stateSubscription = self:subscribeToModel( stateModel, function ( model )
+					local newState = Engine.GetModelValue( model )
+					if newState ~= nil then
+						self.currentPlayerState = newState
 						
-						if currentHealth <= 0 then
-							-- Still HP=0 after timer = DEAD (bled out)
-							self.isDeadState = true
-							self.isDownedState = false
-
+						-- Handle state changes
+						if newState == 0 then
+							-- ALIVE STATE
+							self.health_fill:completeAnimation()
+							self.downedIcon:setAlpha(0)
+							self.portrait:setRGB(1, 1, 1)
+							self.name:setRGB(1, 1, 1)
+							self.health_fill:setRGB(1, 1, 1)
+							if self.isPlayerSlotOccupied then
+								self.health_fill:setAlpha(1)
+								self.health_border:setAlpha(1)
+								self.essence_icon:setAlpha(1)
+								self.points:setAlpha(1)
+							end
+							
+							-- Set initial health bar value when becoming alive
+							if self.currentHealth then
+								self.health_fill:setShaderVector( 0,
+									CoD.GetVectorComponentFromString( self.currentHealth, 1 ),
+									CoD.GetVectorComponentFromString( self.currentHealth, 2 ),
+									CoD.GetVectorComponentFromString( self.currentHealth, 3 ),
+									CoD.GetVectorComponentFromString( self.currentHealth, 4 ) )
+							end
+							
+						elseif newState == 1 then
+							-- DOWNED STATE
+							-- Check if player has Coagulant gobblegum (index 3)
+							local bleedoutTime = 45000  -- Default: 45 seconds
+							if self.currentGobbleGum == 3 then
+								bleedoutTime = 135000  -- Coagulant: 135 seconds (3x longer)
+							end
+							
+							-- Show downed visuals
+							self.health_fill:completeAnimation()
+							if self.isPlayerSlotOccupied then
+								self.downedIcon:setAlpha(1)
+								self.health_fill:setAlpha(1)
+								self.health_border:setAlpha(1)
+								self.essence_icon:setAlpha(1)
+								self.points:setAlpha(1)
+							end
+							self.downedIcon:setRGB(1, 0.2, 0.2)
+							self.health_fill:setRGB(1, 0.2, 0.2)
+							self.health_fill:setShaderVector( 0, 1, 0, 0, 0 )
+							self.health_fill:beginAnimation("bleedout_timer", bleedoutTime, false, false, CoD.TweenType.Linear)
+							self.health_fill:setShaderVector( 0, 0, 0, 0, 0 )
+							self.portrait:setRGB(1, 1, 1)
+							self.name:setRGB(1, 1, 1)
+							
+						elseif newState == 2 then
+							-- DEAD STATE
+							self.health_fill:completeAnimation()
 							self.health_border:setAlpha(0)
 							self.essence_icon:setAlpha(0)
 							self.points:setAlpha(0)
 							self.downedIcon:setAlpha(0)
-							self.deadOverlay:setAlpha(1)
 							self.portrait:setRGB(0.3, 0.3, 0.3)
 							self.name:setRGB(1, 0.2, 0.2)
-						else
-							-- Got revived before timer expired
-							self.isDownedState = false
-						end
-						
-						-- Cleanup timer
-						if self.deathCheckTimer ~= nil then
-							self:removeElement(self.deathCheckTimer)
-							self.deathCheckTimer = nil
 						end
 					end
-				end)
+				end )
 			end
 		end
 	end )
@@ -277,17 +246,6 @@ CoD.AetheriumPartyPlayers.new = function ( menu, controller, playerIndex )
 	self.downedIcon:setRGB(1, 1, 1)
 	self.downedIcon:setAlpha(0)  -- Hidden by default
 	self:addElement(self.downedIcon)
-
-	-- Dead State Overlay (offset from BG top)
-	local deadOverlayTop = bgTop + 20
-	local deadOverlayBottom = deadOverlayTop + 38
-	self.deadOverlay = LUI.UIImage.new()
-	self.deadOverlay:setLeftRight(true, false, 66, 98)
-	self.deadOverlay:setTopBottom(true, false, deadOverlayTop, deadOverlayBottom)
-	self.deadOverlay:setImage(RegisterImage("i_mtl_image_4b496d8bd0369913"))
-	self.deadOverlay:setRGB(1, 0.2, 0.2)  -- Red
-	self.deadOverlay:setAlpha(0)  -- Hidden by default
-	self:addElement(self.deadOverlay)
 	
 	-- Portrait - reactive subscription
 	self.portrait:linkToElementModel( self, "zombiePlayerIcon", true, function ( model )
@@ -306,7 +264,7 @@ CoD.AetheriumPartyPlayers.new = function ( menu, controller, playerIndex )
 		end
 	end )
 
-	-- Name - reactive subscription (BO6 Overhaul pattern)
+	-- Name - reactive subscription
 	self.name:linkToElementModel( self, "playerName", true, function ( model )
 		local name = Engine.GetModelValue( model )
 		if name then
@@ -337,19 +295,15 @@ CoD.AetheriumPartyPlayers.new = function ( menu, controller, playerIndex )
 		self.points:setAlpha( alpha )
 	end )
 
-	-- Visibility controlled by health subscription - widget shows when clientNum is assigned
-	-- All element alpha is managed in the health subscription above
-
 	LUI.OverrideFunction_CallOriginalSecond( self, "close", function ( element )
-		element.bg:close()
-		element.portrait:close()
-		element.name:close()
-		element.health_fill:close()
-		element.health_border:close()
-		element.essence_icon:close()
-		element.points:close()
-		element.downedIcon:close()
-		element.deadOverlay:close()
+		if element.bg then element.bg:close() end
+		if element.portrait then element.portrait:close() end
+		if element.name then element.name:close() end
+		if element.health_fill then element.health_fill:close() end
+		if element.health_border then element.health_border:close() end
+		if element.essence_icon then element.essence_icon:close() end
+		if element.points then element.points:close() end
+		if element.downedIcon then element.downedIcon:close() end
 	end )
 	
 	if PostLoadFunc then

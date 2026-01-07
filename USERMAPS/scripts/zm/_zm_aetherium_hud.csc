@@ -31,6 +31,9 @@ function __init__()
 	{
 		clientfield::register( "world", "player_health_" + i, VERSION_SHIP, 7, "float", &set_ui_model_value, !CF_HOST_ONLY, !CF_CALLBACK_ZERO_ON_NEW_ENT );
 	}
+	
+	// Register packed player states clientfield
+	clientfield::register( "world", "player_states_packed", VERSION_SHIP, 8, "int", &player_states_callback, 0, 0 );
     
 	// Load the Aetherium HUD
 	LuiLoad( "ui.uieditor.menus.HUD.AetheriumHud" );
@@ -38,5 +41,41 @@ function __init__()
 
 function __main__()
 {
-	// Client-side HUD logic  
+	// Client-side HUD logic
+	// Pre-create player state models
+	for( i = 0; i < 4; i++ )
+	{
+		model = getuimodelforcontroller( 0 );
+		if( IsDefined( model ) )
+		{
+			stateModel = createuimodel( model, "player_state_" + i );
+			setuimodelvalue( stateModel, 0 );
+		}
+	}
+}
+
+function player_states_callback( localclientnum, oldval, newval, bnewent, binitialsnap, fieldname, bwastimejump )
+{
+	// Unpack all 4 player states from the single packed value
+	player0_state = ( newval >> 0 ) & 3;  // Extract bits 0-1
+	player1_state = ( newval >> 2 ) & 3;  // Extract bits 2-3
+	player2_state = ( newval >> 4 ) & 3;  // Extract bits 4-5
+	player3_state = ( newval >> 6 ) & 3;  // Extract bits 6-7
+	
+	// Update UI models for each player
+	model = getuimodelforcontroller( localclientnum );
+	if( IsDefined( model ) )
+	{
+		// Player 0
+		setuimodelvalue( createuimodel( model, "player_state_0" ), player0_state );
+		
+		// Player 1
+		setuimodelvalue( createuimodel( model, "player_state_1" ), player1_state );
+		
+		// Player 2
+		setuimodelvalue( createuimodel( model, "player_state_2" ), player2_state );
+		
+		// Player 3
+		setuimodelvalue( createuimodel( model, "player_state_3" ), player3_state );
+	}
 }

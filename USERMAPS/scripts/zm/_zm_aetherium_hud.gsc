@@ -5,6 +5,7 @@
 #using scripts\shared\clientfield_shared;
 #using scripts\shared\exploder_shared;
 #using scripts\shared\flag_shared;
+#using scripts\shared\laststand_shared;
 #using scripts\shared\math_shared;
 #using scripts\shared\scene_shared;
 #using scripts\shared\system_shared;
@@ -44,6 +45,11 @@ function __init__()
 		clientfield::register( "world", "player_health_" + i, VERSION_SHIP, 7, "float" );
 	}
 	
+	// Register packed player states clientfield (all 4 players in 1 field)
+	// 8 bits total: Player 0 (bits 0-1), Player 1 (bits 2-3), Player 2 (bits 4-5), Player 3 (bits 6-7)
+	// Each player uses 2 bits: 0=alive, 1=downed, 2=dead
+	clientfield::register( "world", "player_states_packed", VERSION_SHIP, 8, "int" );
+	
 	// Register on_connect callback to start per-player health monitoring
 	callback::on_connect( &on_player_connect );
 }
@@ -57,6 +63,9 @@ function __main__()
 	
 	// Register zombie damage callback for kill feed
 	zm::register_zombie_damage_override_callback(&zombie_death_callback);
+	
+	// Start player state monitoring
+	level thread monitor_player_states();
 }
 
 function on_player_connect()
@@ -316,5 +325,65 @@ function menu_option_third_person_handler()
 				self setclientthirdperson( 0 );
 			}
 		}
+	}
+}
+function monitor_player_states()
+{
+	level endon( "end_game" );
+	
+	// Track last state to avoid unnecessary updates
+	level.player_last_states = [];
+	level.player_last_states[0] = -1;
+	level.player_last_states[1] = -1;
+	level.player_last_states[2] = -1;
+	level.player_last_states[3] = -1;
+	
+	while( true )
+	{
+		players = GetPlayers();
+		state_changed = false;
+		
+		foreach( player in players )
+		{
+			entityNum = player GetEntityNumber();
+			
+			// Determine player state
+			player_state = 0; // Default: Alive
+			
+			// Check dead/spectator FIRST (highest priority)
+			if( player.sessionstate == "spectator" || 
+			    player.sessionstate == "intermission" || 
+			    player.sessionstate == "dead" )
+			{
+				player_state = 2; // Dead/Spectator
+			}
+			// Then check downed
+			else if( player laststand::player_is_in_laststand() )
+			{
+				player_state = 1; // Downed
+			}
+			// else: player_state = 0 (Alive)
+			
+			// Only update if state changed
+			if( player_state != level.player_last_states[entityNum] )
+			{
+				level.player_last_states[entityNum] = player_state;
+				state_changed = true;
+			}
+		}
+		
+		// Pack all 4 player states into a single integer and send once
+		if( state_changed )
+		{
+			packed_value = 0;
+			packed_value = packed_value | ( level.player_last_states[0] << 0 );  // Player 0: bits 0-1
+			packed_value = packed_value | ( level.player_last_states[1] << 2 );  // Player 1: bits 2-3
+			packed_value = packed_value | ( level.player_last_states[2] << 4 );  // Player 2: bits 4-5
+			packed_value = packed_value | ( level.player_last_states[3] << 6 );  // Player 3: bits 6-7
+			
+			level clientfield::set( "player_states_packed", packed_value );
+		}
+		
+		wait( 0.5 ); // Check twice per second
 	}
 }
