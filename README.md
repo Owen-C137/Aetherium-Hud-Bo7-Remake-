@@ -110,7 +110,7 @@ to false
 ---
 
 ## For Support Join My Discord: 
-- [Discord Invite Link](https://discord.gg/fRhT4GNryr)
+- [Discord Invite Link](https://discord.gg/pzt9gRDPPS)
 
 ---
 
