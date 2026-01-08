@@ -21,16 +21,16 @@ this is a beta/test version to find issues before releasing publicly.
 ## Preview
 
 Main HUD:
-![Description](https://demonscriptz.live/preview/184/content)
+![Main HUD](https://ibb.co/wbdGRD0)
 
 ScoreBoard:
-![Description](https://demonscriptz.live/preview/185/content)
+![ScoreBoard](https://ibb.co/BHb0YmjY)
 
 Pause Menu:
-![Description](https://demonscriptz.live/preview/186/content)
+![Pause Menu](https://ibb.co/TqDTYNCQ)
 
 Options Menu:
-![Description](https://demonscriptz.live/preview/183/content)
+![Options Menu](https://ibb.co/1YFY1rG7)
 
 ---
 
