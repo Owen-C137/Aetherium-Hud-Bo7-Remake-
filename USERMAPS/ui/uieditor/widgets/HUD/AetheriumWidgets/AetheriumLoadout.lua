@@ -2,6 +2,7 @@
 -- Uses: i_mtl_ui_hud_loadout_theme_aetherium
 
 require( "ui.uieditor.widgets.HUD.Mappings.AetheriumWeapons" )  -- For CoD.AetheriumWeaponData table
+require( "ui.uieditor.widgets.HUD.Mappings.AetheriumAAT" )  -- For CoD.AetheriumAAT mappings
 require( "ui.uieditor.widgets.HUD.AetheriumWidgets.AetheriumPerksContainer" )  -- Perks widget
 
 -- Helper function to get weapon data by display name OR codename
@@ -503,21 +504,7 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 		local aatIcon = Engine.GetModelValue(model)
 		
 		if aatIcon and aatIcon ~= "" then
-			-- The aatIcon is a string containing the AAT name (e.g., "zm_aat_blast_furnace")
-			local iconPath = "blacktransparent"
-			
-			if aatIcon:find("blast_furnace") then
-				iconPath = "i_mtl_ui_icons_elementaldamage_fire"
-			elseif aatIcon:find("dead_wire") then
-				iconPath = "i_mtl_ui_icons_elementaldamage_electrical"
-			elseif aatIcon:find("fire_works") then
-				iconPath = "i_mtl_ui_icons_elementaldamage_pyro"
-			elseif aatIcon:find("thunder_wall") then
-				iconPath = "i_mtl_ui_icons_elementaldamage_storm"
-			elseif aatIcon:find("turned") then
-				iconPath = "i_mtl_ui_icons_elementaldamage_toxic"
-			end
-			
+			local iconPath = CoD.GetAATIcon(aatIcon)
 			self.ammo_mod_icon:setImage(RegisterImage(iconPath))
 			self.ammo_mod_icon:setAlpha(1)
 		else

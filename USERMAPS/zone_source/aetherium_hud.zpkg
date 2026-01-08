@@ -17,7 +17,6 @@ rawfile,ui/uieditor/widgets/HUD/ZM_CursorHint/Prompts/PromptMysteryBox.lua
 rawfile,ui/uieditor/widgets/HUD/ZM_CursorHint/Prompts/PromptWallBuy.lua
 rawfile,ui/uieditor/widgets/HUD/ZM_CursorHint/Prompts/PromptBBG.lua
 
-
 // AETHERIUM WIDGETS
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumLoadout.lua
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumPlayerInfo.lua
@@ -42,6 +41,7 @@ rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumThirdPersonCrosshair.l
 rawfile,ui/uieditor/widgets/HUD/Mappings/AetheriumBBG.lua
 rawfile,ui/uieditor/widgets/HUD/Mappings/AetheriumWeapons.lua
 rawfile,ui/uieditor/widgets/HUD/Mappings/AetheriumCharacters.lua
+rawfile,ui/uieditor/widgets/HUD/Mappings/AetheriumAAT.lua
 rawfile,ui/uieditor/widgets/HUD/Mappings/AtheriumPerks.lua
 
 scriptparsetree,scripts/zm/_zm_aetherium_hud.gsc
@@ -164,9 +164,6 @@ image,i_mtl_ui_cursor_arrow_active
 image,i_mtl_sat_quest_widget
 image,i_mtl_image_7d9423641070f37e
 image,i_mtl_sat_ui_icon_rank_prestige_04
-
-
-
 
 // BASE IMAGES
 image,$blacktransparent
