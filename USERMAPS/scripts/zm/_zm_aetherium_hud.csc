@@ -19,14 +19,14 @@ REGISTER_SYSTEM_EX( "zm_aetherium_hud", &__init__, &__main__, undefined )
 
 function set_ui_model_value( localClientNum, oldVal, newVal, bNewEnt, bInitialSnap, fieldName, bWasTimeJump )
 {
-	// BO6 Overhaul pattern - create model using exact fieldName
+	//  - create model using exact fieldName
 	setuimodelvalue( createuimodel( getuimodelforcontroller( localClientNum ), fieldName ), newVal );
 }
 
 function __init__()
 {
 	// Register health clientfield callbacks for each player using world
-	// Use com_maxclients to support up to 8 players (BO6 Overhaul pattern)
+	// Use com_maxclients to support up to 8 players 
 	for( i = 0; i < GetDvarInt( "com_maxclients" ); i++ )
 	{
 		clientfield::register( "world", "player_health_" + i, VERSION_SHIP, 7, "float", &set_ui_model_value, !CF_HOST_ONLY, !CF_CALLBACK_ZERO_ON_NEW_ENT );
