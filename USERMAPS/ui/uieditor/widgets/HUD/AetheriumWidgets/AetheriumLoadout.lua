@@ -13,6 +13,14 @@ function CoD.GetWeaponDataByName(weaponName)
 		}
 	end
 	
+	-- Safety check: ensure CoD.AetheriumWeaponData exists
+	if not CoD.AetheriumWeaponData then
+		return {
+			icon = "i_mtl_ui_icon_zm_ping_mystery_box",
+			description = ""
+		}
+	end
+	
 	local lowerName = string.lower(weaponName)
 	local normalizedName = lowerName:gsub("%s+", "")  -- Remove all spaces for comparison
 	
@@ -60,21 +68,31 @@ local function GetWeaponIcon( weaponName )
 		return "blacktransparent"
 	end
 	
+	-- Safety check: ensure CoD.AetheriumWeaponData exists
+	if not CoD.AetheriumWeaponData then
+		return "blacktransparent"
+	end
+	
 	-- Remove common prefixes/suffixes for cleaner lookup
 	local cleanWeapon = weaponName:gsub("_upgraded", ""):gsub("_upg", ""):gsub("_zm", "")
 	
 	-- Check for exact match first
-	if CoD.AetheriumWeaponData[cleanWeapon] then
+	if CoD.AetheriumWeaponData[cleanWeapon] and CoD.AetheriumWeaponData[cleanWeapon].icon then
 		return CoD.AetheriumWeaponData[cleanWeapon].icon
 	end
 	
 	-- Try stripping _up suffix as fallback
 	local baseWeapon = cleanWeapon:gsub("_up", "")
-	if CoD.AetheriumWeaponData[baseWeapon] then
+	if CoD.AetheriumWeaponData[baseWeapon] and CoD.AetheriumWeaponData[baseWeapon].icon then
 		return CoD.AetheriumWeaponData[baseWeapon].icon
 	end
 	
-	return CoD.AetheriumWeaponData["default"].icon
+	-- Final fallback: return default icon or blacktransparent
+	if CoD.AetheriumWeaponData["default"] and CoD.AetheriumWeaponData["default"].icon then
+		return CoD.AetheriumWeaponData["default"].icon
+	end
+	
+	return "blacktransparent"
 end
 
 CoD.AetheriumLoadout = InheritFrom( LUI.UIElement )
@@ -107,12 +125,59 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.weapon_icon:setAlpha( 1.0 )
 	self:addElement( self.weapon_icon )
 	
+	-- Track previous weapon for swap detection
+	local previousWeaponName = ""
+	
+	-- Weapon swap animation clips
+	self.weapon_icon.clipsPerState = {
+		DefaultState = {
+			DefaultClip = function()
+				self.weapon_icon:completeAnimation()
+				self.weapon_icon:setAlpha( 1 )
+			end,
+			WeaponSwap = function()
+				self.weapon_icon:completeAnimation()
+				
+				-- Fade out + slide right
+				self.weapon_icon:beginAnimation( "keyframe", 120, false, false, CoD.TweenType.Linear )
+				self.weapon_icon:setAlpha( 0 )
+				self.weapon_icon:setLeftRight( true, false, 1085, 1195 )  -- Shift right 30px
+				
+				self.weapon_icon:registerEventHandler( "transition_complete_keyframe", function()
+					-- Fade in + slide from left
+					self.weapon_icon:setLeftRight( true, false, 1025, 1135 )  -- Start left 30px
+					self.weapon_icon:beginAnimation( "keyframe", 120, false, false, CoD.TweenType.Linear )
+					self.weapon_icon:setAlpha( 1 )
+					self.weapon_icon:setLeftRight( true, false, 1055, 1165 )  -- Back to center
+				end )
+			end
+		}
+	}
+	
 	-- Subscribe to weapon changes using viewmodelWeaponName
 	self.weapon_icon:subscribeToModel( Engine.GetModel( Engine.GetModelForController( controller ), "currentWeapon.viewmodelWeaponName" ), function ( model )
 		local weaponName = Engine.GetModelValue( model )
 		if weaponName then
 			local weaponIcon = GetWeaponIcon( weaponName )
-			self.weapon_icon:setImage( RegisterImage( weaponIcon ) )
+			
+			-- Trigger swap animation if weapon changed (not initial load)
+			if previousWeaponName ~= "" and previousWeaponName ~= weaponName then
+				-- Play swap animation BEFORE changing icon
+				self.weapon_icon:animateToState( "WeaponSwap" )
+				
+				-- Delay icon change to middle of animation (after fade out)
+				local swapTimer = LUI.UITimer.new( 130, "weapon_swap_icon_change" )
+				self.weapon_icon:addElement( swapTimer )
+				self.weapon_icon:registerEventHandler( "weapon_swap_icon_change", function()
+					self.weapon_icon:setImage( RegisterImage( weaponIcon ) )
+				end )
+			else
+				-- Initial load - no animation
+				self.weapon_icon:setImage( RegisterImage( weaponIcon ) )
+			end
+			
+			-- Update previous weapon
+			previousWeaponName = weaponName
 			
 			-- Check if it's equipment (grenade, cymbal_monkey, etc.)
 			local isEquipment = weaponName:find("frag_grenade") or 
@@ -144,10 +209,52 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.weapon_name:setRGB( 1.0, 1.0, 1.0 )
 	self.weapon_name:setAlignment(Enum.LUIAlignment.LUI_ALIGNMENT_CENTER)
 	self:addElement( self.weapon_name )
+	
+	-- Track previous weapon name
+	local previousWeaponTextName = ""
+	
+	-- Weapon name swap animation
+	self.weapon_name.clipsPerState = {
+		DefaultState = {
+			DefaultClip = function()
+				self.weapon_name:completeAnimation()
+				self.weapon_name:setAlpha( 1 )
+			end,
+			WeaponSwap = function()
+				self.weapon_name:completeAnimation()
+				
+				-- Fade out
+				self.weapon_name:beginAnimation( "keyframe", 100, false, false, CoD.TweenType.Linear )
+				self.weapon_name:setAlpha( 0 )
+				
+				self.weapon_name:registerEventHandler( "transition_complete_keyframe", function()
+					-- Fade in
+					self.weapon_name:beginAnimation( "keyframe", 100, false, false, CoD.TweenType.Linear )
+					self.weapon_name:setAlpha( 1 )
+				end )
+			end
+		}
+	}
+	
 	self.weapon_name:subscribeToModel( Engine.GetModel( Engine.GetModelForController( controller ), "currentWeapon.weaponName" ), function ( model )
 		local weaponName = Engine.GetModelValue( model )
 		if weaponName then
-			self.weapon_name:setText( Engine.Localize( weaponName ) )
+			-- Trigger animation if name changed
+			if previousWeaponTextName ~= "" and previousWeaponTextName ~= weaponName then
+				self.weapon_name:animateToState( "WeaponSwap" )
+				
+				-- Change text in middle of animation
+				local textTimer = LUI.UITimer.new( 100, "weapon_name_text_change" )
+				self.weapon_name:addElement( textTimer )
+				self.weapon_name:registerEventHandler( "weapon_name_text_change", function()
+					self.weapon_name:setText( Engine.Localize( weaponName ) )
+				end )
+			else
+				-- Initial load
+				self.weapon_name:setText( Engine.Localize( weaponName ) )
+			end
+			
+			previousWeaponTextName = weaponName
 		end
 	end )
 
@@ -160,10 +267,61 @@ CoD.AetheriumLoadout.new = function ( menu, controller )
 	self.ammo_clip:setRGB( 1.0, 1.0, 1.0 )
 	self.ammo_clip:setAlignment( Enum.LUIAlignment.LUI_ALIGNMENT_CENTER )
 	self:addElement( self.ammo_clip )
+	
+	-- Low ammo warning animation timer
+	local lowAmmoFlashing = false
+	local lowAmmoTimer = nil
+	
 	self.ammo_clip:subscribeToModel( Engine.GetModel( Engine.GetModelForController( controller ), "currentWeapon.ammoInClip" ), function ( model )
 		local ammoInClip = Engine.GetModelValue( model )
 		if ammoInClip then
 			self.ammo_clip:setText( Engine.Localize( ammoInClip ) )
+			
+			-- Get max ammo in clip for percentage calculation
+			local maxAmmoModel = Engine.GetModel( Engine.GetModelForController( controller ), "currentWeapon.maxAmmoInClip" )
+			local maxAmmo = maxAmmoModel and Engine.GetModelValue( maxAmmoModel ) or 30
+			
+			-- Low ammo threshold: 25% of magazine or less
+			local lowAmmoThreshold = math.max( 3, math.floor( maxAmmo * 0.25 ) )
+			
+			-- Check if ammo is low
+			if ammoInClip > 0 and ammoInClip <= lowAmmoThreshold then
+				-- Start low ammo flash if not already flashing
+				if not lowAmmoFlashing then
+					lowAmmoFlashing = true
+					
+					-- Pulsing red flash animation (official BO3 pattern)
+					local function flashLowAmmo()
+						self.ammo_clip:completeAnimation()
+						self.ammo_clip:beginAnimation( "keyframe", 200, false, false, CoD.TweenType.Linear )
+						self.ammo_clip:setRGB( 1, 0, 0 )  -- Red
+						self.ammo_clip:setAlpha( 1 )
+						self.ammo_clip:registerEventHandler( "transition_complete_keyframe", function()
+							if lowAmmoFlashing then
+								self.ammo_clip:completeAnimation()
+								self.ammo_clip:beginAnimation( "keyframe", 200, false, false, CoD.TweenType.Linear )
+								self.ammo_clip:setRGB( 1, 1, 1 )  -- White
+								self.ammo_clip:setAlpha( 0.6 )
+								self.ammo_clip:registerEventHandler( "transition_complete_keyframe", function()
+									if lowAmmoFlashing then
+										flashLowAmmo()  -- Loop
+									end
+								end )
+							end
+						end )
+					end
+					
+					flashLowAmmo()
+				end
+			else
+				-- Stop flashing
+				if lowAmmoFlashing then
+					lowAmmoFlashing = false
+					self.ammo_clip:completeAnimation()
+					self.ammo_clip:setRGB( 1, 1, 1 )  -- Reset to white
+					self.ammo_clip:setAlpha( 1 )
+				end
+			end
 		end
 	end )
 

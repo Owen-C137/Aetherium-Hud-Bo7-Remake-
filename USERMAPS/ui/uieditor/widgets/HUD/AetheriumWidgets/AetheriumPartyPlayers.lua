@@ -3,6 +3,7 @@
 -- Uses clientfield state detection (0=alive, 1=downed, 2=dead)
 
 require("ui.uieditor.widgets.HUD.Mappings.AetheriumBBG")
+require("ui.uieditor.widgets.HUD.Mappings.AetheriumCharacters")
 
 local PostLoadFunc = function ( self, controller )
 	-- Track current state
@@ -251,16 +252,8 @@ CoD.AetheriumPartyPlayers.new = function ( menu, controller, playerIndex )
 	self.portrait:linkToElementModel( self, "zombiePlayerIcon", true, function ( model )
 		local zombiePlayerIcon = Engine.GetModelValue( model )
 		if zombiePlayerIcon then
-			if zombiePlayerIcon == "uie_t7_zm_hud_score_char1" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_nikolai"
-			elseif zombiePlayerIcon == "uie_t7_zm_hud_score_char2" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_takeo"
-			elseif zombiePlayerIcon == "uie_t7_zm_hud_score_char3" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_dempsey"
-			elseif zombiePlayerIcon == "uie_t7_zm_hud_score_char4" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_richtofen"
-			end
-			self.portrait:setImage( RegisterImage( zombiePlayerIcon ) )
+			local portraitIcon = CoD.GetCharacterPortrait( zombiePlayerIcon )
+			self.portrait:setImage( RegisterImage( portraitIcon ) )
 		end
 	end )
 

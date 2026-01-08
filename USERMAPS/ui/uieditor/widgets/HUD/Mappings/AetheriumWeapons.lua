@@ -83,7 +83,7 @@ CoD.AetheriumWeaponData = {
 	},
 	-- Default NO IMAGE / NO DESC entry
 	["default"] = {
-		icon = "",
+		icon = "blacktransparent",
 		description = ""
 	}
 }

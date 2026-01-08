@@ -4,6 +4,7 @@
 
 require( "ui.uieditor.widgets.HUD.AetheriumWidgets.AetheriumPlusPointsContainer" )
 require("ui.uieditor.widgets.HUD.Mappings.AetheriumBBG")
+require("ui.uieditor.widgets.HUD.Mappings.AetheriumCharacters")
 
 CoD.AetheriumPlayerInfo = InheritFrom( LUI.UIElement )
 CoD.AetheriumPlayerInfo.new = function ( menu, controller )
@@ -149,17 +150,8 @@ CoD.AetheriumPlayerInfo.new = function ( menu, controller )
 	self.player_portrait:linkToElementModel( self, "zombiePlayerIcon", true, function ( model )
 		local zombiePlayerIcon = Engine.GetModelValue( model )
 		if zombiePlayerIcon then
-			-- Map character IDs to icon names
-			if zombiePlayerIcon == "uie_t7_zm_hud_score_char1" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_nikolai"
-			elseif zombiePlayerIcon == "uie_t7_zm_hud_score_char2" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_takeo"
-			elseif zombiePlayerIcon == "uie_t7_zm_hud_score_char3" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_dempsey"
-			elseif zombiePlayerIcon == "uie_t7_zm_hud_score_char4" then
-				zombiePlayerIcon = "i_mtl_ui_icon_operators_richtofen"
-			end
-			self.player_portrait:setImage( RegisterImage( zombiePlayerIcon ) )
+			local portraitIcon = CoD.GetCharacterPortrait( zombiePlayerIcon )
+			self.player_portrait:setImage( RegisterImage( portraitIcon ) )
 		end
 	end )
 	self:addElement( self.player_portrait )
