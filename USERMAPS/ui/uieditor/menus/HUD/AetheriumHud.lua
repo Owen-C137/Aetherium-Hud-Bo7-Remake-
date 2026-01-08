@@ -5,6 +5,7 @@
 require( "ui.uieditor.menus.StartMenu.AetheriumStartMenu" )
 
 -- Aetherium Widgets
+require( "ui.uieditor.widgets.HUD.AetheriumWidgets.AetheriumPerksContainer" )
 require( "ui.uieditor.widgets.HUD.AetheriumWidgets.AetheriumLoadout" )
 require( "ui.uieditor.widgets.HUD.AetheriumWidgets.AetheriumPlayerInfo" )
 require( "ui.uieditor.widgets.HUD.AetheriumWidgets.AetheriumPartyPlayers" )

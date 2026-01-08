@@ -2,6 +2,7 @@
 -- Uses: i_mtl_ui_hud_loadout_theme_aetherium
 
 require( "ui.uieditor.widgets.HUD.Mappings.AetheriumWeapons" )  -- For CoD.AetheriumWeaponData table
+require( "ui.uieditor.widgets.HUD.AetheriumWidgets.AetheriumPerksContainer" )  -- Perks widget
 
 -- Helper function to get weapon data by display name OR codename
 function CoD.GetWeaponDataByName(weaponName)
