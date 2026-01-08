@@ -156,25 +156,7 @@ DataSources.AetheriumStartMenuButtons = ListHelper_SetupDataSource("AetheriumSta
 		}
 	})
 
-	table.insert(buttons, {
-		models = {
-			displayText = "HUD Settings",
-			action = function(self, element, controller, actionParam, menu)
-				-- TODO: Open HUD settings menu
-				GoBack(menu, controller)
-			end
-		}
-	})
-
-	table.insert(buttons, {
-		models = {
-			displayText = "Social",
-			action = function(self, element, controller, actionParam, menu)
-				-- TODO: Open social menu
-				GoBack(menu, controller)
-			end
-		}
-	})
+	-- HUD Settings and Social buttons removed
 
 	table.insert(buttons, {
 		models = {

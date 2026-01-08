@@ -33,6 +33,7 @@ rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumPowerupNotification.lu
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumRoundCounter.lua
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumGobbleGum.lua
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumScoreboard.lua
+rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/Scoreboard/AetheriumQuestsCustom.lua
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumKillFeed.lua
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumKillFeedText.lua
 rawfile,ui/uieditor/widgets/HUD/AetheriumWidgets/AetheriumSpecialWeapon.lua
