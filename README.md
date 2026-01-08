@@ -6,9 +6,9 @@
 ### Adding To The HUD
 
 1. [How To Add Perks](https://github.com/Owen-C137/Atherium-Hud-Bo7-Remake-/wiki/How-To-Add-Perks)
-2. [How To Add Weapons](https://github.com/Owen-C137/Atherium-Hud-Bo7-Remake-/wiki/How-To-Add-Weapons)
-3. [How To Add Powerups](https://github.com/Owen-C137/Atherium-Hud-Bo7-Remake-/wiki/How-To-Add-New-Powerups)
-
+2. [How To Add Weapons](https://github.com/Owen-C137/Aetherium-Hud-Bo7-Remake-/wiki/How-To-Add-Weapons)
+3. [How To Add Powerups](https://github.com/Owen-C137/Aetherium-Hud-Bo7-Remake-/wiki/How-To-Add-New-Powerups)
+4. [How To Change Player Icons](https://github.com/Owen-C137/Aetherium-Hud-Bo7-Remake-/wiki/How-To-Change-Player-Portrait)
 ## Note:
 
 This HUD is not fully finished there are still some features that need to be added and bugs to be fixed, 
