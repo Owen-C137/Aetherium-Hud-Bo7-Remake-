@@ -11,13 +11,17 @@ CoD.AetheriumRoundCounter.new = function ( menu, controller )
 	self:setClass( CoD.AetheriumRoundCounter )
 	self.id = "AetheriumRoundCounter"
 	self.soundSet = "HUD"
+	self:setLeftRight(true, false, 0, 1280)
+	self:setTopBottom(true, false, 0, 720)
 	-- Positioning handled by parent HUD
 	self.anyChildUsesUpdateState = true
 
 	-- Vanilla BO3 round widget (image-based digits with effects)
 	self.Rounds = CoD.ZmRndContainer.new( menu, controller )
-	self.Rounds:setLeftRight(true, false, 1080, 1142)
-	self.Rounds:setTopBottom(true, false, 42, 130)
+	self.Rounds:setLeftRight(false, true, -160, -50)  -- Anchor from right: 100px wide container, 50px from right edge
+	self.Rounds:setTopBottom(true, false, 35, 115)    -- Top: 80px tall, 35px from top
+	self.Rounds:setScale(0.8)
+	self.Rounds:setAlignment(Enum.LUIAlignment.LUI_ALIGNMENT_RIGHT)  -- Right-align content within container
 	self:addElement( self.Rounds )
 
 	-- Close handler
